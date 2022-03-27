@@ -3,3 +3,4 @@ preprocessor_host: "localhost"
 preprocessor_port: 6969
 pifu_port: 9696
 pifu_host: "localhost"
+use_gpu: 0
