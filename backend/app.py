@@ -1,9 +1,9 @@
 from tracemalloc import start
 from flask import Flask, flash, request, redirect, url_for,render_template
 import shutil,os,uuid
-from threading import Thread
+from config import init_config
 from pipeline import *
-import time
+
 
 UPLOAD_FOLDER = './static/uploads/'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -11,7 +11,8 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-IMG_RES = 256
+CONFIG = init_config()
+IMG_RES = CONFIG['resolution']
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -46,7 +47,7 @@ def success(id):
 
 def start_processing_image(id):
     print(f"Start processing photo {id}")
-    preprocessing_image(id,res=IMG_RES)
+    preprocessing_image(id)
     gen_model_from_image(res=IMG_RES)
     clean_up(id,res=IMG_RES)
     print(f"Done processing photo {id}")
@@ -54,3 +55,6 @@ def start_processing_image(id):
 @app.route('/display/<filename>')
 def display_image(filename):
 	return redirect(url_for('static', filename='uploads/'+filename), code=301)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

@@ -1,18 +1,23 @@
-import importlib.util,os,subprocess,shutil
+import importlib.util,os,subprocess,shutil,requests
 import datetime as dt
-from unittest import result
+from config import init_config
 
-def preprocessing_image(id,res=256):
-    cd = os.getcwd()
-    os.chdir('../lightweight-human-pose-estimation.pytorch')
-    subprocess.call(f"python preprocessing.py ../pifuhd/sample_images/{id} -r {res}")
-    os.chdir(cd)
+CONFIG = init_config()
+os.environ['NO_PROXY'] = '127.0.0.1'
+
+def preprocessing_image(id):
+    # cd = os.getcwd()
+    # os.chdir('../lightweight-human-pose-estimation.pytorch')
+    # subprocess.call(f"python preprocessing.py ../pifuhd/sample_images/{id} -r {res}")
+    # os.chdir(cd)
+    requests.get(f'http://{CONFIG["preprocessor_host"]}:{CONFIG["preprocessor_port"]}/{id}')
 
 def gen_model_from_image(res=256):
-    cd = os.getcwd()
-    os.chdir('../pifuhd')
-    subprocess.call(f"python -m apps.simple_test --use_rect -r {res} -i sample_images")
-    os.chdir(cd)
+    # cd = os.getcwd()
+    # os.chdir('../pifuhd')
+    # subprocess.call(f"python -m apps.simple_test --use_rect -r {res} -i sample_images")
+    # os.chdir(cd)
+    requests.get(f'http://{CONFIG["pifu_host"]}:{CONFIG["pifu_port"]}/{id}')
 
 def clean_up(id,res):
     try:

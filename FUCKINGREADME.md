@@ -20,4 +20,5 @@ Then you will need to put
 * `checkpoint_iter_370000.pth` in `lightweight-human-pose-estimation.pytorch\`
 * `pifuhd.pt` under `pifuhd\checkpoints\` 
 
+Anyway I make it into 3 microservices to run them independently
 
