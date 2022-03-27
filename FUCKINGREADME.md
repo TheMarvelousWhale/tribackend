@@ -22,3 +22,5 @@ Then you will need to put
 
 Anyway I make it into 3 microservices to run them independently
 
+Then run the 3 microservices at the port designated on config.yaml
+
