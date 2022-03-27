@@ -1,5 +1,6 @@
-lightweight-humanpose-estimation.pytorch/
+lightweight-human-pose-estimation.pytorch/
 pifuhd/
 images/
-backend/static/
+backend/static/uploads
 previous_results
+**/__pycache__/

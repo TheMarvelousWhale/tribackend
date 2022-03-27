@@ -1,14 +1,17 @@
-import subprocess
-from flask import Flask, flash, request, redirect, url_for
-from werkzeug.utils import secure_filename
+from tracemalloc import start
+from flask import Flask, flash, request, redirect, url_for,render_template
 import shutil,os,uuid
 from threading import Thread
+from pipeline import *
+import time
 
-UPLOAD_FOLDER = './static'
+UPLOAD_FOLDER = './static/uploads/'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+IMG_RES = 256
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -31,25 +34,23 @@ def upload_file():
             filename = str(uuid.uuid1()) + file.filename[file.filename.rfind('.'):]
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             return redirect(url_for('success',id=filename))
-    return '''
-    <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
-    <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
-    </form>
-    '''
+    return render_template('index.html')
+
+
 @app.route('/<id>/success', methods=['GET'])
 def success(id):
-    shutil.move(f"./static/{id}",f"./../pifuhd/sample_images/{id}")
-    Thread(target=start_processing_image).start()
-       
-    return '''
-    <!doctype html>
-    <h1>Your Image has been successfully uploaded</h1>
-    <h1><a href='/'>Back to homepage</a></h1>
-    '''
-def start_processing_image():
-    print("start processing...")
-    subprocess.call("./../pifuhd/start.sh")
+    shutil.copyfile(f"{UPLOAD_FOLDER}/{id}",f"./../pifuhd/sample_images/{id}")
+    #Thread(target=start_processing_image,args=(id,)).start()
+    start_processing_image(id) 
+    return render_template('file_uploaded.html',img=id)
+
+def start_processing_image(id):
+    print(f"Start processing photo {id}")
+    preprocessing_image(id,res=IMG_RES)
+    gen_model_from_image(res=IMG_RES)
+    clean_up(id,res=IMG_RES)
+    print(f"Done processing photo {id}")
+
+@app.route('/display/<filename>')
+def display_image(filename):
+	return redirect(url_for('static', filename='uploads/'+filename), code=301)

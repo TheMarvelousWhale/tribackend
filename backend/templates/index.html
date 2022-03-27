@@ -1,0 +1,37 @@
+
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+</head>
+
+<body>
+<title>Trycycle</title>
+<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/base.css') }}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script type="text/javascript">// <![CDATA[
+        function loading(){
+            $("#loading").show();
+            $("#content").hide();       
+        }
+// ]]></script>
+
+    <section class="landing-background" >
+        <div class="landing-content">
+            <div id="loading" style="display:none">
+                <p>Please wait while the image is processing...</p>
+                <img src="/static/styles/loading.gif">
+            </div>
+            <div class="text-box" id="content">
+                <h1>Upload new File</h1>
+                <form method=post enctype=multipart/form-data>
+                    <input type=file name=file>
+                    <input type=submit value=Upload onclick="loading()">
+                </form>
+            </div>
+        </div>
+    </section>
+</body>

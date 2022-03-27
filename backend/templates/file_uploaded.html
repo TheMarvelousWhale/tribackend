@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+</head>
+
+<body>
+<title>Trycycle</title>
+
+
+<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/base.css') }}">
+    <section class="landing-background" >
+        <div class="landing-content">
+            <div class="text-box">
+                <h2>Your Image has been successfully uploaded</h2>
+                <img src="{{url_for('display_image', filename=img)}}" style="max-width:30%;">
+                <button><a href='/'>Back to homepage</a></button>
+            </div>
+            
+        </div>
+    </section>
+</body>
