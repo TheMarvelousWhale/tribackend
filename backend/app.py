@@ -48,7 +48,7 @@ def success(id):
 def start_processing_image(id):
     print(f"Start processing photo {id}")
     preprocessing_image(id)
-    gen_model_from_image(res=IMG_RES)
+    gen_model_from_image(id,res=IMG_RES)
     clean_up(id,res=IMG_RES)
     print(f"Done processing photo {id}")
 

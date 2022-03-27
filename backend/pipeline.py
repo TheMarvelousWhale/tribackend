@@ -12,7 +12,7 @@ def preprocessing_image(id):
     # os.chdir(cd)
     requests.get(f'http://{CONFIG["preprocessor_host"]}:{CONFIG["preprocessor_port"]}/{id}')
 
-def gen_model_from_image(res=256):
+def gen_model_from_image(id,res=256):
     # cd = os.getcwd()
     # os.chdir('../pifuhd')
     # subprocess.call(f"python -m apps.simple_test --use_rect -r {res} -i sample_images")
