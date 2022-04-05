@@ -1,11 +1,13 @@
 from tracemalloc import start
-from flask import Flask, flash, request, redirect, url_for,render_template
+from flask import Flask, flash, request, redirect, url_for, render_template, jsonify
 import shutil,os,uuid
 from config import init_config
 from pipeline import *
+from pathlib import Path
 
-
-UPLOAD_FOLDER = './static/uploads/'
+dirname = os.path.dirname(__file__)
+UPLOAD_FOLDER = os.path.join(dirname, 'static/uploads/')
+Path(UPLOAD_FOLDER).mkdir(parents=True, exist_ok=True)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
@@ -55,6 +57,35 @@ def start_processing_image(id):
 @app.route('/display/<filename>')
 def display_image(filename):
 	return redirect(url_for('static', filename='uploads/'+filename), code=301)
+
+# API endpoint
+@app.route('/api/picture', methods=['POST'])
+def api_upload_file():
+    # return "upload file"
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        return jsonify({
+            "success": False,
+            "message":"'No file part"
+        })
+    file = request.files['file']
+    # # If the user does not select a file, the browser submits an
+    # # empty file without a filename.
+    if file.filename == '':
+        return jsonify({
+            "success": False,
+            "message":"No selected file"
+        })
+    if file and allowed_file(file.filename):
+        filename = str(uuid.uuid1()) + file.filename[file.filename.rfind('.'):]
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
+        # TODO: add some delay to simulate long processing time
+        return jsonify({
+            "success": True,
+            "message":"File upload success",
+            "filename": filename
+        })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
