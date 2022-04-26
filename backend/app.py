@@ -5,6 +5,9 @@ from config import init_config
 from pipeline import *
 from pathlib import Path
 
+import firebase_admin
+from firebase_admin import credentials, messaging
+
 dirname = os.path.dirname(__file__)
 UPLOAD_FOLDER = os.path.join(dirname, 'static/uploads/')
 Path(UPLOAD_FOLDER).mkdir(parents=True, exist_ok=True)
@@ -15,6 +18,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 CONFIG = init_config()
 IMG_RES = CONFIG['resolution']
+
+#firebase app
+firebase_key = os.path.join(dirname, "firebase_admin_key.json")
+firebase_cred = credentials.Certificate(firebase_key)
+firebase_app = firebase_admin.initialize_app(firebase_cred)
+TEST_TOKEN = "Your Test Token"
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -87,5 +96,52 @@ def api_upload_file():
             "filename": filename
         })
 
+    
+# Firebase FCM test function
+@app.route('/push_msg')
+def push_message():
+    # This registration token comes from the client FCM SDKs.
+    registration_token = TEST_TOKEN
+
+    # See documentation on defining a message payload.
+    message = messaging.Message(
+        data={
+            'score': '850',
+            'time': '2:45',
+        },
+        token=registration_token,
+    )
+    
+
+    # Send a message to the device corresponding to the provided
+    # registration token.
+    response = messaging.send(message)
+    # Response is a message ID string.
+    print('Successfully sent message:', response)
+    return "message sent"
+
+@app.route('/push_notification')
+def push_notification():
+    # See documentation on defining a message payload.
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title='Test title',
+            body='Test message',
+        ),
+        data={
+            'score': '850',
+            'time': '2:45',
+        },
+        topic="breakfast",
+    )
+
+    # Send a message to devices subscribed to the combination of topics
+    # specified by the provided condition.
+    response = messaging.send(message)
+    # Response is a message ID string.
+    print('Successfully sent notification:', response)
+    return "Notification sent"
+        
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
