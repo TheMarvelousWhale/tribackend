@@ -1,5 +1,6 @@
 pose-estimation/
 pifuhd/
+pix2surf
 images/
 backend/static/uploads
 previous_results

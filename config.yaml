@@ -3,7 +3,10 @@ preprocessor_host: "localhost"
 preprocessor_port: 6969
 pifu_port: 9696
 pifu_host: "localhost"
+pix2surf_host: "localhost"
+pix2surf_port: 9191
 use_gpu: 0
 pifu_input_dir: "../pifuhd/sample_images/"
 pifu_result_dir: "../pifuhd/results/pifuhd_final/recon/"
 result_dir: "../previous_results/"
+pix2surf_input_dir: "../pix2surf/test_data/meshes/pants" 

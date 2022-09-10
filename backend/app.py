@@ -25,9 +25,12 @@ preprocessor_host= config["preprocessor_host"]
 preprocessor_port= config["preprocessor_port"]
 pifu_host = config["pifu_host"]
 pifu_port = config["pifu_port"]
-pifu_input_dir = config["pifu_input_dir"]
-pifu_result_dir = config["pifu_result_dir"]
-result_dir = config["result_dir"]
+pix2surf_host = config["pix2surf_host"]
+pix2surf_port = config["pix2surf_port"]
+pifu_input_dir:str = config["pifu_input_dir"]
+pifu_result_dir:str = config["pifu_result_dir"]
+pix2surf_input_dir:str = config["pix2surf_input_dir"]
+result_dir:str = config["result_dir"]
 
 """Front end"""
 @app.route('/', methods=['GET', 'POST'])
@@ -107,7 +110,8 @@ def start_processing_image(fileid):
     print(f"===== Start processing photo {fileid} =====")
     preprocessing_image(fileid, preprocessor_host,preprocessor_port)
     gen_model_from_image(fileid,pifu_host,pifu_port)
-    clean_up(fileid,img_res)
+    filename = clean_up(fileid,img_res)
+    gen_pix2surf(filename)
     print(f"==== Done processing photo {fileid} ====")
 
 def preprocessing_image(fileid:str,preprocessor_host:str,preprocessor_port:str):
@@ -117,7 +121,14 @@ def preprocessing_image(fileid:str,preprocessor_host:str,preprocessor_port:str):
 def gen_model_from_image(fileid:str,pifu_host:str,pifu_port:str):
     requests.get(f'http://{pifu_host}:{pifu_port}/{fileid}')
 
-def clean_up(fileid,res):
+def gen_pix2surf(filename:str):
+    filename_wo_extension = filename.replace(".obj","")
+    os.remove(f"{pix2surf_input_dir}/body_0.obj")
+    shutil.copyfile(f"{result_dir}/{filename}",f"{pix2surf_input_dir}/body_0.obj")
+    requests.get(f'http://{pix2surf_host}:{pix2surf_port}/{filename_wo_extension}')
+    shutil.copyfile(f"../pix2surf/{filename_wo_extension}.mp4",f"{upload_dir}/{filename_wo_extension}.mp4")
+
+def clean_up(fileid,res) -> str:
     try:
         file_prefix = now()
         
@@ -131,6 +142,8 @@ def clean_up(fileid,res):
     else:
         os.remove(f"{pifu_input_dir}{fileid}")
         os.remove(f"{pifu_input_dir}{fileid[:fileid.rfind('.')]}_rect.txt")
+    finally:
+        return f"{file_prefix}_{obj}"
 
 if __name__ == '__main__':
     if check_setup == False:
