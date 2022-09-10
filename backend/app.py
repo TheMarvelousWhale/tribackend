@@ -53,11 +53,12 @@ def upload_file():
     return render_template('index.html')
 
 
-@app.route('/<fileid>/success', methods=['GET'])
+@app.route('/success/<fileid>/', methods=['GET'])
 def success(fileid):
     start_processing_image(fileid) 
     return render_template('file_uploaded.html',img=fileid)
 
+#to get a particular static resouce
 @app.route('/display/<name>')
 def display_image(name):
     fullpath = os.path.join(UPLOAD_FOLDER_NAME.replace('static/',''),name)
@@ -124,11 +125,11 @@ def gen_model_from_image(fileid:str,pifu_host:str,pifu_port:str):
 def gen_pix2surf(filename:str):
     filename_wo_extension = filename.replace(".obj","")
     try: 
-        if Path.exists(f"{pix2surf_input_dir}/body_0.obj"):
+        if os.path.exists(f"{pix2surf_input_dir}/body_0.obj"):
             os.remove(f"{pix2surf_input_dir}/body_0.obj")
         shutil.copyfile(f"{result_dir}/{filename}",f"{pix2surf_input_dir}/body_0.obj")
         requests.get(f'http://{pix2surf_host}:{pix2surf_port}/{filename_wo_extension}')
-        shutil.copyfile(f"../pix2surf/{filename_wo_extension}.mp4",f"{upload_dir}/{filename_wo_extension}.mp4")
+        shutil.copyfile(f"../pix2surf/{filename_wo_extension}.mp4",f"{result_dir}/{filename_wo_extension}.mp4")
     except Exception as e:
         print(e)
     finally:
@@ -137,12 +138,10 @@ def gen_pix2surf(filename:str):
 
 def clean_up(fileid,res) -> str:
     try:
-        file_prefix = now()
-        
-        obj = fileid[:fileid.rfind('.')]+f"_{res}.obj"
-        shutil.move(f"{pifu_result_dir}result_{obj}",f"{result_dir}/{file_prefix}_{obj}")
+        obj = fileid[:fileid.rfind('.')]+f".obj"
+        shutil.move(f"{pifu_result_dir}result_{obj}",f"{result_dir}/{obj}")
         png = obj.replace('.obj','.png')
-        shutil.move(f"{pifu_result_dir}result_{png}",f"{result_dir}/{file_prefix}_{png}")
+        shutil.move(f"{pifu_result_dir}result_{png}",f"{result_dir}/{png}")
 
     except Exception as e:
         print(e)
@@ -150,7 +149,7 @@ def clean_up(fileid,res) -> str:
         os.remove(f"{pifu_input_dir}{fileid}")
         os.remove(f"{pifu_input_dir}{fileid[:fileid.rfind('.')]}_rect.txt")
     finally:
-        return f"{file_prefix}_{obj}"
+        return f"{obj}"
 
 if __name__ == '__main__':
     if check_setup == False:
