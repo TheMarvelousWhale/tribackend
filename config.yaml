@@ -4,3 +4,6 @@ preprocessor_port: 6969
 pifu_port: 9696
 pifu_host: "localhost"
 use_gpu: 0
+pifu_input_dir: "../pifuhd/sample_images/"
+pifu_result_dir: "../pifuhd/results/pifuhd_final/recon/"
+result_dir: "../previous_results/"

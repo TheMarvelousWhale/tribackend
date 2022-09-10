@@ -1,1 +1,0 @@
-\[2022 March 26\]: Done with pipeline, but can migrate the model initation outside and build it as an ingestion pipeline instead DONE

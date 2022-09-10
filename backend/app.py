@@ -1,25 +1,35 @@
+from distutils.command.upload import upload
 from tracemalloc import start
 from flask import Flask, flash, request, redirect, url_for, render_template, jsonify
 import shutil,os,uuid
-from config import init_config
-from pipeline import *
+from util import *
 from pathlib import Path
+import importlib.util,os,subprocess,shutil,requests
 
-dirname = os.path.dirname(__file__)
-UPLOAD_FOLDER = os.path.join(dirname, 'static/uploads/')
-Path(UPLOAD_FOLDER).mkdir(parents=True, exist_ok=True)
+
+"""Global var"""
+UPLOAD_FOLDER_NAME: str =  'static/uploads/'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+CONFIG_YAML_FILENAME = '../config.yaml'
 
+
+"""Set up internal variable"""
+dirname = os.path.dirname(__file__)
+upload_dir = os.path.join(dirname, UPLOAD_FOLDER_NAME)
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = upload_dir
+app.secret_key = str(uuid.uuid1()) 
+config = load_config_from_yaml(CONFIG_YAML_FILENAME)
+img_res = config['resolution']
+preprocessor_host= config["preprocessor_host"]
+preprocessor_port= config["preprocessor_port"]
+pifu_host = config["pifu_host"]
+pifu_port = config["pifu_port"]
+pifu_input_dir = config["pifu_input_dir"]
+pifu_result_dir = config["pifu_result_dir"]
+result_dir = config["result_dir"]
 
-CONFIG = init_config()
-IMG_RES = CONFIG['resolution']
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+"""Front end"""
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
@@ -33,30 +43,22 @@ def upload_file():
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
+        if file and is_file_allowed(file.filename,ALLOWED_EXTENSIONS):
             filename = str(uuid.uuid1()) + file.filename[file.filename.rfind('.'):]
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('success',id=filename))
+            file.save(os.path.join(upload_dir, filename))
+            return redirect(url_for('success',fileid=filename))
     return render_template('index.html')
 
 
-@app.route('/<id>/success', methods=['GET'])
-def success(id):
-    shutil.copyfile(f"{UPLOAD_FOLDER}/{id}",f"./../pifuhd/sample_images/{id}")
-    #Thread(target=start_processing_image,args=(id,)).start()
-    start_processing_image(id) 
-    return render_template('file_uploaded.html',img=id)
+@app.route('/<fileid>/success', methods=['GET'])
+def success(fileid):
+    start_processing_image(fileid) 
+    return render_template('file_uploaded.html',img=fileid)
 
-def start_processing_image(id):
-    print(f"Start processing photo {id}")
-    preprocessing_image(id)
-    gen_model_from_image(id,res=IMG_RES)
-    clean_up(id,res=IMG_RES)
-    print(f"Done processing photo {id}")
-
-@app.route('/display/<filename>')
-def display_image(filename):
-	return redirect(url_for('static', filename='uploads/'+filename), code=301)
+@app.route('/display/<name>')
+def display_image(name):
+    fullpath = os.path.join(UPLOAD_FOLDER_NAME.replace('static/',''),name)
+    return redirect(url_for('static', filename=fullpath), code=301)
 
 # API endpoint
 @app.route('/api/picture', methods=['POST'])
@@ -76,16 +78,61 @@ def api_upload_file():
             "success": False,
             "message":"No selected file"
         })
-    if file and allowed_file(file.filename):
+    if file and is_file_allowed(file.filename):
         filename = str(uuid.uuid1()) + file.filename[file.filename.rfind('.'):]
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        
-        # TODO: add some delay to simulate long processing time
+        file.save(os.path.join(upload_dir, filename))
         return jsonify({
             "success": True,
             "message":"File upload success",
             "filename": filename
         })
 
+
+"""Back end"""
+def check_setup() -> bool:
+    dirname, not_exists = check_dir_not_exist() 
+    if not_exists:
+        print(f"{dirname} missing")
+        return False
+    return True  
+
+def check_dir_not_exist():
+    for _dir in [pifu_input_dir,pifu_result_dir,upload_dir]:
+        if not Path.exists(_dir):
+            return _dir, True
+    return "",False
+
+
+def start_processing_image(fileid):
+    print(f"===== Start processing photo {fileid} =====")
+    preprocessing_image(fileid, preprocessor_host,preprocessor_port)
+    gen_model_from_image(fileid,pifu_host,pifu_port)
+    clean_up(fileid,img_res)
+    print(f"==== Done processing photo {fileid} ====")
+
+def preprocessing_image(fileid:str,preprocessor_host:str,preprocessor_port:str):
+    shutil.copyfile(f"{upload_dir}/{fileid}",f"{pifu_input_dir}/{fileid}")
+    requests.get(f'http://{preprocessor_host}:{preprocessor_port}/{fileid}')
+
+def gen_model_from_image(fileid:str,pifu_host:str,pifu_port:str):
+    requests.get(f'http://{pifu_host}:{pifu_port}/{fileid}')
+
+def clean_up(fileid,res):
+    try:
+        file_prefix = now()
+        
+        obj = fileid[:fileid.rfind('.')]+f"_{res}.obj"
+        shutil.move(f"{pifu_result_dir}result_{obj}",f"{result_dir}/{file_prefix}_{obj}")
+        png = obj.replace('.obj','.png')
+        shutil.move(f"{pifu_result_dir}result_{png}",f"{result_dir}/{file_prefix}_{png}")
+
+    except Exception as e:
+        print(e)
+    else:
+        os.remove(f"{pifu_input_dir}{fileid}")
+        os.remove(f"{pifu_input_dir}{fileid[:fileid.rfind('.')]}_rect.txt")
+
 if __name__ == '__main__':
+    if check_setup == False:
+        exit("setup failed") 
     app.run(host='0.0.0.0', port=5000)
