@@ -123,10 +123,17 @@ def gen_model_from_image(fileid:str,pifu_host:str,pifu_port:str):
 
 def gen_pix2surf(filename:str):
     filename_wo_extension = filename.replace(".obj","")
-    os.remove(f"{pix2surf_input_dir}/body_0.obj")
-    shutil.copyfile(f"{result_dir}/{filename}",f"{pix2surf_input_dir}/body_0.obj")
-    requests.get(f'http://{pix2surf_host}:{pix2surf_port}/{filename_wo_extension}')
-    shutil.copyfile(f"../pix2surf/{filename_wo_extension}.mp4",f"{upload_dir}/{filename_wo_extension}.mp4")
+    try: 
+        if Path.exists(f"{pix2surf_input_dir}/body_0.obj"):
+            os.remove(f"{pix2surf_input_dir}/body_0.obj")
+        shutil.copyfile(f"{result_dir}/{filename}",f"{pix2surf_input_dir}/body_0.obj")
+        requests.get(f'http://{pix2surf_host}:{pix2surf_port}/{filename_wo_extension}')
+        shutil.copyfile(f"../pix2surf/{filename_wo_extension}.mp4",f"{upload_dir}/{filename_wo_extension}.mp4")
+    except Exception as e:
+        print(e)
+    finally:
+        return "hello"
+        
 
 def clean_up(fileid,res) -> str:
     try:
