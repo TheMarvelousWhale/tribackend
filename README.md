@@ -24,3 +24,13 @@ Anyway I make it into 3 microservices to run them independently
 
 Then run the 3 microservices at the port designated on config.yaml
 
+## How It works
+
+The backend has 3 parts:
+1. A web interface to serve commands
+2. A pose estimation pipeline
+3. PifuHD pipeline
+
+The web will send the image to the pose estimation pipeline, which will then extract the pose information into a text format into a designated folder inside pifuHD. pifuHD will then output a obj file in the result folder. 
+
+Pending: display the 3D obj file on web
